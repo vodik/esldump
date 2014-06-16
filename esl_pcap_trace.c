@@ -2,8 +2,10 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <err.h>
+#include <sys/wait.h>
 #include <pcap.h>
 #include <jansson.h>
 #include <netinet/ip.h>
@@ -73,6 +75,52 @@ static pcap_t *pcap_start(const char *filename)
     return handle;
 }
 
+static pid_t pager_start(void)
+{
+    int pipefd[2];
+
+    if (pipe2(pipefd, O_CLOEXEC) < 0)
+        err(1, "failed to create pipe");
+
+    pid_t pid = fork();
+    switch (pid) {
+    case -1:
+        err(1, "failed to fork");
+        break;
+    case 0:
+        dup2(pipefd[0], 0);
+        execlp("less", "less", NULL);
+        err(1, "failed to start pager");
+        break;
+    }
+
+    dup2(pipefd[1], 1);
+    close(pipefd[0]);
+    close(pipefd[1]);
+
+    return pid;
+}
+
+static int pager_wait(pid_t pid)
+{
+    int stat;
+
+    fflush(stdout);
+    fclose(stdout);
+
+    if (waitpid(pid, &stat, 0) < 0)
+        err(1, "Failed to get pager status");
+
+    if (stat) {
+        if (WIFEXITED(stat))
+            return WEXITSTATUS(stat);
+        if (WIFSIGNALED(stat))
+            return -1;
+    }
+
+    return 0;
+}
+
 static json_t *extract_json(const uint8_t *payload, size_t len)
 {
     json_t *json;
@@ -130,6 +178,8 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    pid_t pager = pager_start();
+
     for (i = 1; i < argc; ++i) {
         handle = pcap_start(argv[i]);
 
@@ -167,5 +217,5 @@ int main(int argc, char *argv[])
         pcap_close(handle);
     }
 
-    return 0;
+    return pager_wait(pager);
 }
