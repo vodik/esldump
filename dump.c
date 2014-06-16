@@ -9,7 +9,6 @@
 #include <jansson.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
-/* #include <arpa/inet.h> */
 
 #define BOLDGREEN   "\033[1;32m"
 #define NOCOLOR     "\033[0m"
@@ -87,9 +86,9 @@ static json_t *extract_json(const uint8_t *payload, size_t len)
     return json;
 }
 
-static int print_header(json_t *root)
+static int print_header(const json_t *root)
 {
-    json_t *name, *class;
+    const json_t *name, *class;
 
     name = json_object_get(root, "Event-Name");
     if (!json_is_string(name))
@@ -105,9 +104,9 @@ static int print_header(json_t *root)
     return 0;
 }
 
-static int print_field(json_t *root, const char *key)
+static int print_field(const json_t *root, const char *key)
 {
-    json_t *value = json_object_get(root, key);
+    const json_t *value = json_object_get(root, key);
     if (!json_is_string(value))
         return -1;
 
