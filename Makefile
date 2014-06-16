@@ -5,7 +5,6 @@ CFLAGS := -std=c11 \
 	$(CFLAGS)
 
 LDLIBS = -lpcap -ljansson
-PREFIX = /usr
 
 all: esl_pcap_trace
 
