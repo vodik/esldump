@@ -39,7 +39,12 @@ static const char *esl_hdrs[] = {
     "network-port",
     "username",
     "realm",
+    "sip-method",
     "user-agent",
+    "limit-usage",
+    "limit-max",
+    "limit-seconds",
+    "limit-host"
 };
 static const size_t esl_hdr_len = sizeof(esl_hdrs) / sizeof(esl_hdrs[0]);
 
