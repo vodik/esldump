@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -89,6 +90,7 @@ static pid_t pager_start(void)
         break;
     case 0:
         dup2(pipefd[0], 0);
+        setenv("LESS", "FRSX", true);
         execlp("less", "less", NULL);
         err(1, "failed to start pager");
         break;
