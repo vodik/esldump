@@ -99,8 +99,8 @@ static int print_header(json_t *root)
     if (!json_is_string(class))
         return -1;
 
-    printf(BOLDGREEN "%s" NOCOLOR " from %s\n", json_string_value(name),
-           json_string_value(class));
+    printf(BOLDGREEN "%s" NOCOLOR " from %s\n",
+           json_string_value(name), json_string_value(class));
 
     return 0;
 }
