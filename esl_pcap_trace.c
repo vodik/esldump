@@ -116,45 +116,51 @@ static int print_field(const json_t *root, const char *key)
 
 int main(int argc, char *argv[])
 {
+    int i;
     pcap_t *handle;
-    const char *filename = argv[1];
     const uint8_t *packet;
     struct pcap_pkthdr header;
 
-    if (argc != 2) {
-        fprintf(stderr, "usage: %s filename", argv[0]);
+    if (argc == 1) {
+        fprintf(stderr, "usage: %s [files...]\n", argv[0]);
         return 1;
     }
 
-    handle = pcap_start(filename);
+    for (i = 1; i < argc; ++i) {
+        handle = pcap_start(argv[i]);
 
-    while ((packet = pcap_next(handle, &header))) {
-        const uint8_t *payload;
+        while ((packet = pcap_next(handle, &header))) {
+            const uint8_t *payload;
 
-        const struct ip *ipheader = get_ip(packet + 14, &payload);
-        if (ipheader->ip_v != IPVERSION)
-            continue;
-        if (ipheader->ip_p != IPPROTO_TCP)
-            continue;
+            const struct ip *ipheader = get_ip(packet + 14, &payload);
+            if (ipheader->ip_v != IPVERSION)
+                continue;
+            if (ipheader->ip_p != IPPROTO_TCP)
+                continue;
 
-        const struct tcphdr *tcpheader = get_tcp(payload, &payload);
-        if (tcpheader->th_sport != htons(8021))
-            continue;
-        if (!tcpheader->th_flags & TH_PUSH)
-            continue;
+            const struct tcphdr *tcpheader = get_tcp(payload, &payload);
+            if (tcpheader->th_sport != htons(8021))
+                continue;
+            if (!tcpheader->th_flags & TH_PUSH)
+                continue;
 
-        size_t payload_len = header.caplen - (payload - packet);
-        json_t *root = extract_json(payload, payload_len);
+            size_t payload_len = header.caplen - (payload - packet);
+            json_t *root = extract_json(payload, payload_len);
 
-        if (!root)
-            continue;
+            if (!root)
+                continue;
 
-        print_header(root);
+            print_header(root);
 
-        size_t idx;
-        for (idx = 0; idx < esl_hdr_len; ++idx)
-            print_field(root, esl_hdrs[idx]);
-        putchar('\n');
+            size_t idx;
+            for (idx = 0; idx < esl_hdr_len; ++idx)
+                print_field(root, esl_hdrs[idx]);
+            putchar('\n');
+
+            json_decref(root);
+        }
+
+        pcap_close(handle);
     }
 
     return 0;
