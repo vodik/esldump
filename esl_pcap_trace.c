@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -46,14 +45,14 @@ static const size_t esl_hdr_len = sizeof(esl_hdrs) / sizeof(esl_hdrs[0]);
 
 static inline const struct tcphdr *get_tcp(const uint8_t *data, const uint8_t **payload)
 {
-    const struct tcphdr* hdr = (struct tcphdr *)data;
+    const struct tcphdr* hdr = (const struct tcphdr *)data;
     *payload = &data[hdr->th_off * 4];
     return hdr;
 }
 
 static inline const struct ip *get_ip(const uint8_t *data, const uint8_t **payload)
 {
-    const struct ip* hdr = (struct ip *)data;
+    const struct ip* hdr = (const struct ip *)data;
     *payload = &data[hdr->ip_hl * 4];
     return hdr;
 }
@@ -141,7 +140,7 @@ int main(int argc, char *argv[])
             const struct tcphdr *tcpheader = get_tcp(payload, &payload);
             if (tcpheader->th_sport != htons(8021))
                 continue;
-            if (!tcpheader->th_flags & TH_PUSH)
+            if (!(tcpheader->th_flags & TH_PUSH))
                 continue;
 
             size_t payload_len = header.caplen - (payload - packet);
