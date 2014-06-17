@@ -76,9 +76,12 @@ static pcap_t *pcap_start(const char *filename)
     return handle;
 }
 
-static pid_t pager_start(void)
+static pid_t pager_start(const char *mode)
 {
     int pipefd[2];
+
+    if (!isatty(STDOUT_FILENO))
+        return 0;
 
     if (pipe2(pipefd, O_CLOEXEC) < 0)
         err(1, "failed to create pipe");
@@ -89,14 +92,14 @@ static pid_t pager_start(void)
         err(1, "failed to fork");
         break;
     case 0:
-        dup2(pipefd[0], 0);
-        setenv("LESS", "FRSX", true);
+        setenv("LESS", mode, true);
+        dup2(pipefd[STDIN_FILENO], STDIN_FILENO);
         execlp("less", "less", NULL);
         err(1, "failed to start pager");
         break;
     }
 
-    dup2(pipefd[1], 1);
+    dup2(pipefd[STDOUT_FILENO], STDOUT_FILENO);
     close(pipefd[0]);
     close(pipefd[1]);
 
@@ -180,7 +183,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    pid_t pager = pager_start();
+    pid_t pager = pager_start("FRSX");
 
     for (i = 1; i < argc; ++i) {
         handle = pcap_start(argv[i]);
@@ -219,5 +222,5 @@ int main(int argc, char *argv[])
         pcap_close(handle);
     }
 
-    return pager_wait(pager);
+    return pager ? pager_wait(pager) : 0;
 }
