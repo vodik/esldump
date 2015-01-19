@@ -6,9 +6,9 @@ CFLAGS := -std=c11 \
 
 LDLIBS = -lpcap -ljansson
 
-all: esl_pcap_trace
+all: esldump
 
 clean:
-	$(RM) esl_pcap_trace *.o
+	$(RM) esldump *.o
 
 .PHONY: clean
